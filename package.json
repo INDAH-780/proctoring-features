@@ -1,0 +1,37 @@
+{
+  "name": "proctoring-features",
+  "version": "1.0.0",
+  "description": "A js library mainly for proctoring actions",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write src/**/*.js",
+    "docs": "jsdoc -c jsdoc.json",
+    "build": "rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "(https://github.com/INDAH-780/proctoring-features.git)"
+  },
+  "keywords": [
+    "random",
+    "proctoring",
+    "features"
+  ],
+  "author": "Indah Mbah <mbahindah780@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "unique-random-array": "4.0.0"
+  },
+  "devDependencies": {
+    "eslint": "9.14.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-prettier": "5.2.1",
+    "jsdoc": "4.0.4",
+    "prettier": "3.3.3",
+    "rollup": "4.24.4",
+    "rollup-plugin-terser": "7.0.2"
+  }
+}
