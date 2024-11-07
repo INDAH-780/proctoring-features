@@ -16,15 +16,14 @@
     "url": "(https://github.com/INDAH-780/proctoring-features.git)"
   },
   "keywords": [
-    "random",
-    "proctoring",
-    "features"
+    "Browserlockdown",
+    "Fullscreen Enforcement",
+    "Activity Logging",
+    "Screenshots capture"
   ],
   "author": "Indah Mbah <mbahindah780@gmail.com>",
   "license": "MIT",
-  "dependencies": {
-    "unique-random-array": "4.0.0"
-  },
+  
   "devDependencies": {
     "eslint": "9.14.0",
     "eslint-config-prettier": "9.1.0",
