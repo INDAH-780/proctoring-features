@@ -1,7 +1,7 @@
 {
   "name": "proctoring-features",
   "version": "1.0.0",
-  "description": "A js library mainly for proctoring actions",
+  "description": "An open source JavaScript library designed to ensure a secure and fair online exam environment. It prevents common cheating techniques by implementing browser lockdown features, enforcing fullscreen mode, and periodically capturing screenshots at intervals. It also tracks suspicious activities, such as tab/window switches and restricted keyboard shortcuts.",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -23,7 +23,6 @@
   ],
   "author": "Indah Mbah <mbahindah780@gmail.com>",
   "license": "MIT",
-  
   "devDependencies": {
     "eslint": "9.14.0",
     "eslint-config-prettier": "9.1.0",

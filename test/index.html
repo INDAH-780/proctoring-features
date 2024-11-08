@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proctoring Library Test</title>
+</head>
+<body>
+    <h1>Proctoring Library Test Page</h1>
+    <button id="startExamButton">Start Exam</button>
+
+    <!-- Include the ProctoringLibrary script -->
+    <script src="../dist/proctoring-library.umd.js" defer></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            // Add click event to the "Start Exam" button
+            document.getElementById("startExamButton").addEventListener("click", () => {
+                proctoringLibrary.enforceFullscreen();
+                console.log("Fullscreen mode requested through ProctoringLibrary");
+            });
+
+            // Optional: End session on window close
+            window.addEventListener("beforeunload", () => {
+                const summary = proctoringLibrary.endSession();
+                console.log("Session summary:", summary);
+            });
+        });
+    </script>
+</body>
+</html>

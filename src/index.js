@@ -14,7 +14,7 @@ class ProctoringLibrary {
     this.eventLogs = [];
     this.suspiciousActivities = [];
     this.screenshotInterval = null;
-    this.altKeyActive = false; 
+    this.altKeyActive = false;
 
     this.initLockdown();
     this.initLogging();
@@ -54,40 +54,28 @@ class ProctoringLibrary {
   }
 
   // Method to enforce fullscreen and listen for exit attempts
+ 
   enforceFullscreen() {
-    // Request fullscreen with browser prefix support
+    console.log("Attempting to enter fullscreen"); 
     const elem = document.documentElement;
 
     if (elem.requestFullscreen) {
-      elem.requestFullscreen();
+      elem
+        .requestFullscreen()
+        .then(() => console.log("Fullscreen activated"))
+        .catch((error) =>
+          console.error("Failed to activate fullscreen:", error)
+        );
     } else if (elem.mozRequestFullScreen) {
-      // Firefox
+      /* Firefox */
       elem.mozRequestFullScreen();
     } else if (elem.webkitRequestFullscreen) {
-      // Chrome, Safari
+      /* Chrome, Safari */
       elem.webkitRequestFullscreen();
     } else if (elem.msRequestFullscreen) {
-      // IE
+      /* IE */
       elem.msRequestFullscreen();
     }
-
-    // Listen for fullscreen change
-    document.addEventListener(
-      "fullscreenchange",
-      this.handleFullscreenChange.bind(this)
-    );
-    document.addEventListener(
-      "webkitfullscreenchange",
-      this.handleFullscreenChange.bind(this)
-    );
-    document.addEventListener(
-      "mozfullscreenchange",
-      this.handleFullscreenChange.bind(this)
-    );
-    document.addEventListener(
-      "MSFullscreenChange",
-      this.handleFullscreenChange.bind(this)
-    );
   }
 
   // Fullscreen exit handler
@@ -101,7 +89,7 @@ class ProctoringLibrary {
       this.logEvent("Fullscreen exited");
       this.notifySuspiciousActivity("Fullscreen exited");
       //alert("Please stay in fullscreen mode to continue the exam.");
-      this.enforceFullscreen(); // Re-enter fullscreen
+      this.enforceFullscreen(); 
     }
   }
 
@@ -137,7 +125,7 @@ class ProctoringLibrary {
   startScreenshotCapture() {
     this.screenshotInterval = setInterval(() => {
       this.captureScreenshot();
-    }, 600000); // Capture every 10 minutes
+    }, 600000); 
   }
 
   // Method to capture a screenshot
