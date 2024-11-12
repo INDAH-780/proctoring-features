@@ -9,8 +9,9 @@ export default {
     {
       file: "dist/proctoring-library.umd.js",
       format: "umd",
-      name: "ProctoringLib",
+      name: "ProctoringLibrary",
     }, // UMD
   ],
   plugins: [terser()],
 };
+

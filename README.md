@@ -57,7 +57,7 @@ proctoringLibrary.startScreenshotCapture();
 - After installing the library, you can import it into your React components as follows:
 
 ```javascript
-import ProctoringLibrary from 'proctoringlibrary';
+import ProctoringLibrary from 'proctoring-features';
 ```
 
 ### Limitations

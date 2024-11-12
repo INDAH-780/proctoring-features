@@ -15,28 +15,180 @@ class ProctoringLibrary {
     this.suspiciousActivities = [];
     this.screenshotInterval = null;
     this.altKeyActive = false;
+    this.timerInterval = null;
+    this.elapsedTime = 0; // Elapsed time in minutes
+    this.totalExamDuration = null; // To
 
+    // Initialize the lockdown, logging, fullscreen enforcement, etc.
     this.initLockdown();
     this.initLogging();
     this.enforceFullscreen();
     this.startScreenshotCapture();
     this.detectWindowSwitching();
+    this.createNotificationModal();
+    this.addFullscreenListener();
+
+    this.setExamDuration(this.totalExamDuration);
   }
 
-  showAlert(message) {
-    // alert(message); // Basic alert for user
+  // Public method to allow the user to set exam duration from their application
+  setExamDuration(duration) {
+    if (duration && duration > 0) {
+      this.totalExamDuration = duration; // Total exam duration in minutes
+      this.startTimerNotification(); // Start the timer when duration is set
+    }
   }
 
-  // Method to disable right-click, text selection, and common shortcuts
+  // Method to create a custom notification modal
+  createNotificationModal() {
+    if (document.getElementById("notification-modal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "notification-modal";
+    modal.style.display = "none";
+    modal.style.position = "fixed";
+    modal.style.top = "50%";
+    modal.style.left = "50%";
+    modal.style.transform = "translate(-50%, -50%)";
+    modal.style.backgroundColor = "#fff";
+    modal.style.border = "2px solid #333";
+    modal.style.borderRadius = "12px";
+    modal.style.padding = "40px";
+    modal.style.zIndex = "1000";
+    modal.style.boxShadow = "0px 10px 20px rgba(0, 0, 0, 0.1)";
+    modal.style.maxWidth = "300px";
+    modal.style.width = "90%";
+    modal.style.minHeight = "50px";
+    modal.style.overflowY = "auto";
+    modal.style.transition = "all 0.3s ease-in-out";
+
+    // Modal Header
+    const header = document.createElement("div");
+    header.style.fontSize = "20px";
+    header.style.fontWeight = "bold";
+    header.style.color = "#333";
+    header.style.marginBottom = "20px";
+    header.innerText = "Alert!";
+    modal.appendChild(header);
+
+    const message = document.createElement("span");
+    message.id = "modal-message";
+    message.style.fontSize = "18px";
+    message.style.color = "#333";
+    message.style.lineHeight = "1.5";
+    message.style.marginBottom = "20px";
+    modal.appendChild(message);
+    document.body.appendChild(modal);
+  }
+
+  // Method to show the notification modal with a dynamic message
+  showNotification(message) {
+    const modalMessage = document.getElementById("modal-message");
+    modalMessage.innerText = message; // Set the message
+
+    // Show the modal with a fade-in effect
+    const modal = document.getElementById("notification-modal");
+    modal.style.display = "block";
+    modal.style.opacity = "0";
+    setTimeout(() => {
+      modal.style.opacity = "1"; // Fade in
+    }, 10);
+
+    setTimeout(() => {
+      modal.style.opacity = "0"; // Fade out
+      setTimeout(() => {
+        modal.style.display = "none";
+      }, 300); // Match the fade-out duration with the transition
+    }, 5000); // Display for 5 seconds
+  }
+
+  // Timer alert that pops up as soon as fullscreen is activated
+  startTimerNotification() {
+    if (this.totalExamDuration) {
+      this.showNotification(
+        `The exam will be written in ${this.totalExamDuration} minutes.`
+      );
+    }
+
+   this.timerInterval = setInterval(() => {
+      const remainingTime = this.totalExamDuration - this.elapsedTime;
+      if (remainingTime <= 0) {
+        clearInterval(this.timerInterval);
+        this.showNotification("Time's up! Exam session has ended.");
+      } else {
+        this.showNotification(
+          `You have been writing for ${this.elapsedTime} minutes. ${remainingTime} minutes remaining.`
+        );
+        this.elapsedTime++;
+      }
+    }, 900000); // Update every minute
+  }
+
+  addFullscreenListener() {
+    document.addEventListener("fullscreenchange", () => {
+      if (document.fullscreenElement) {
+        this.startTimerNotification(); // Show timer when fullscreen is active
+      }
+    });
+
+    document.addEventListener("webkitfullscreenchange", () => {
+      if (document.webkitFullscreenElement) {
+        this.startTimerNotification();
+      }
+    });
+
+    document.addEventListener("mozfullscreenchange", () => {
+      if (document.mozFullScreenElement) {
+        this.startTimerNotification();
+      }
+    });
+
+    document.addEventListener("msfullscreenchange", () => {
+      if (document.msFullscreenElement) {
+        this.startTimerNotification();
+      }
+    });
+  }
+
+  // Real-time notification for suspicious activities
+  notifySuspiciousActivity(activity) {
+    const timestamp = new Date().toISOString();
+    this.suspiciousActivities.push({ activity, timestamp });
+
+    // Show the notification with the suspicious activity message
+    this.showNotification(`${activity}`);
+  }
+
+  // Method to detect window switching with Alt key press
+  detectWindowSwitching() {
+    const handleKeyDown = (event) => {
+      if (event.altKey) {
+        this.logEvent("Alt key pressed");
+        this.notifySuspiciousActivity(
+          "You cannot switch tabs during the exam. Please stay on this tab."
+        );
+        event.preventDefault();
+      }
+    };
+
+    // Listen for keydown event
+    window.addEventListener("keydown", handleKeyDown);
+  }
+
+  // Other methods remain unchanged (e.g., lockdown, fullscreen, screenshot capture, etc.)
   initLockdown() {
     document.addEventListener("contextmenu", (event) => {
       event.preventDefault();
       this.logEvent("Right-click blocked");
+      this.notifySuspiciousActivity("Right-click is disabled during the exam."); // Notification for right-click
     });
 
     document.addEventListener("selectstart", (event) => {
       event.preventDefault();
       this.logEvent("Text selection blocked");
+      this.notifySuspiciousActivity(
+        "Text selection is disabled during the exam."
+      ); // Notification for text selection
     });
 
     document.addEventListener("keydown", (event) => {
@@ -46,17 +198,15 @@ class ProctoringLibrary {
           event.preventDefault();
           this.logEvent(`Blocked shortcut: ${event.key.toUpperCase()}`);
           this.notifySuspiciousActivity(
-            `Blocked shortcut: ${event.key.toUpperCase()}`
+            `Shortcut ${event.key.toUpperCase()} is disabled during the exam.`
           );
         }
       }
     });
   }
 
-  // Method to enforce fullscreen and listen for exit attempts
- 
   enforceFullscreen() {
-    console.log("Attempting to enter fullscreen"); 
+    console.log("Attempting to enter fullscreen");
     const elem = document.documentElement;
 
     if (elem.requestFullscreen) {
@@ -67,18 +217,14 @@ class ProctoringLibrary {
           console.error("Failed to activate fullscreen:", error)
         );
     } else if (elem.mozRequestFullScreen) {
-      /* Firefox */
       elem.mozRequestFullScreen();
     } else if (elem.webkitRequestFullscreen) {
-      /* Chrome, Safari */
       elem.webkitRequestFullscreen();
     } else if (elem.msRequestFullscreen) {
-      /* IE */
       elem.msRequestFullscreen();
     }
   }
 
-  // Fullscreen exit handler
   handleFullscreenChange() {
     if (
       !document.fullscreenElement &&
@@ -88,19 +234,16 @@ class ProctoringLibrary {
     ) {
       this.logEvent("Fullscreen exited");
       this.notifySuspiciousActivity("Fullscreen exited");
-      //alert("Please stay in fullscreen mode to continue the exam.");
-      this.enforceFullscreen(); 
+      this.enforceFullscreen();
     }
   }
 
-  // Method to initialize event logging for keystrokes, fullscreen exits, tab switches
   initLogging() {
     window.addEventListener("blur", () => {
       this.logEvent("Tab switch or window blur detected");
       this.notifySuspiciousActivity("Tab switch detected");
     });
 
-    // Alt+Tab detection
     document.addEventListener("keydown", (event) => {
       if (event.altKey && event.key === "Tab") {
         this.logEvent("Alt+Tab detected");
@@ -109,57 +252,89 @@ class ProctoringLibrary {
     });
   }
 
-  // Method to log events
   logEvent(message) {
     const timestamp = new Date().toISOString();
     this.eventLogs.push({ message, timestamp });
     console.log(`[LOG ${timestamp}] ${message}`);
   }
 
-  // Method to retrieve logs (for later analysis)
   getLogs() {
     return this.eventLogs;
   }
 
-  // Periodic screenshot capture
   startScreenshotCapture() {
     this.screenshotInterval = setInterval(() => {
       this.captureScreenshot();
-    }, 600000); 
+    }, 600000);
   }
 
-  // Method to capture a screenshot
+  // Method to capture both screen and user's face (webcam)
   captureScreenshot() {
-    // Check if the browser supports screen capture
-    if (navigator.mediaDevices.getDisplayMedia) {
+    if (
+      navigator.mediaDevices.getDisplayMedia &&
+      navigator.mediaDevices.getUserMedia
+    ) {
+      // Capture the screen
       navigator.mediaDevices
         .getDisplayMedia({ video: true })
-        .then((stream) => {
-          const videoTrack = stream.getVideoTracks()[0];
-          const imageCapture = new ImageCapture(videoTrack);
-
-          // Grab the screenshot (frame from the video)
-          imageCapture
-            .grabFrame()
-            .then((bitmap) => {
+        .then((screenStream) => {
+          // Capture the user's face
+          navigator.mediaDevices
+            .getUserMedia({ video: { facingMode: "user" } })
+            .then((faceStream) => {
+              // Create a canvas to combine both streams
               const canvas = document.createElement("canvas");
-              canvas.width = bitmap.width;
-              canvas.height = bitmap.height;
               const context = canvas.getContext("2d");
-              context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-              const imgData = canvas.toDataURL("image/png");
-              this.logEvent("Screenshot captured");
+              // Get screen and face video tracks
+              const screenTrack = screenStream.getVideoTracks()[0];
+              const faceTrack = faceStream.getVideoTracks()[0];
 
-              // Optional: Do something with the image data (e.g., send to the server)
-              console.log("Captured screenshot as image data:", imgData);
+              // Create video elements for both streams
+              const screenVideo = document.createElement("video");
+              const faceVideo = document.createElement("video");
 
-              // Stop the stream after capture
-              stream.getTracks().forEach((track) => track.stop());
+              screenVideo.srcObject = new MediaStream([screenTrack]);
+              faceVideo.srcObject = new MediaStream([faceTrack]);
+
+              screenVideo.onloadedmetadata = () => {
+                faceVideo.onloadedmetadata = () => {
+                  // Set canvas dimensions to fit both video streams
+                  canvas.width = screenVideo.videoWidth;
+                  canvas.height =
+                    screenVideo.videoHeight + faceVideo.videoHeight;
+
+                  // Draw both the screen and face streams onto the canvas
+                  context.drawImage(
+                    screenVideo,
+                    0,
+                    0,
+                    canvas.width,
+                    screenVideo.videoHeight
+                  );
+                  context.drawImage(
+                    faceVideo,
+                    0,
+                    screenVideo.videoHeight,
+                    canvas.width,
+                    faceVideo.videoHeight
+                  );
+
+                  // Convert canvas to image and log the screenshot
+                  const imgData = canvas.toDataURL("image/png");
+                  this.logEvent("Screenshot captured with screen and face");
+
+                  // Stop both streams
+                  screenStream.getTracks().forEach((track) => track.stop());
+                  faceStream.getTracks().forEach((track) => track.stop());
+                };
+                faceVideo.play();
+              };
+              screenVideo.play();
             })
             .catch((error) => {
-              this.logEvent("Screenshot capture failed");
-              console.error("Screenshot capture failed:", error);
+              this.logEvent("Face capture failed");
+              console.error("Face capture failed:", error);
             });
         })
         .catch((error) => {
@@ -167,53 +342,17 @@ class ProctoringLibrary {
           console.error("Screen capture failed:", error);
         });
     } else {
-      this.logEvent("Screen capture not supported");
-      console.error("Screen capture is not supported by this browser");
+      this.logEvent("Screen capture or webcam not supported");
+      console.error(
+        "Screen capture or webcam is not supported by this browser"
+      );
     }
   }
 
-  // Real-time notification for suspicious activities
-  notifySuspiciousActivity(activity) {
-    const timestamp = new Date().toISOString();
-    this.suspiciousActivities.push({ activity, timestamp });
-    this.showAlert(`Warning: ${activity}`);
-  }
-
-  // Save events to session storage
   saveToSessionStorage(key, data) {
     sessionStorage.setItem(key, JSON.stringify(data));
   }
 
-  // Method to detect Alt+Tab or Windows+Tab switches
-  detectWindowSwitching() {
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Alt") {
-        this.altKeyActive = true;
-      } else if (this.altKeyActive && event.key === "Tab") {
-        this.logEvent("Alt+Tab detected");
-        this.notifySuspiciousActivity("Attempted window switch (Alt+Tab)");
-      } else if (event.key === "Meta") {
-        // Detect Windows (Meta)+Tab as another common switch
-        this.logEvent("Meta key pressed");
-        this.notifySuspiciousActivity(
-          "Attempted window switch (Windows/Meta key)"
-        );
-      }
-    });
-
-    document.addEventListener("keyup", (event) => {
-      if (event.key === "Alt") {
-        this.altKeyActive = false;
-      }
-    });
-
-    window.addEventListener("blur", () => {
-      this.logEvent("Window blur detected (potential tab switch)");
-      this.notifySuspiciousActivity("Tab or window switch detected");
-    });
-  }
-
-  // Method to compile a session summary
   generateSessionSummary() {
     const summary = {
       totalEvents: this.eventLogs.length,
@@ -224,7 +363,6 @@ class ProctoringLibrary {
     return summary;
   }
 
-  // Method to end session and clear intervals
   endSession() {
     clearInterval(this.screenshotInterval);
     const sessionSummary = this.generateSessionSummary();
@@ -233,6 +371,12 @@ class ProctoringLibrary {
   }
 }
 
+
 // Automatically initialize the library when loaded
 const proctoringLibrary = new ProctoringLibrary();
 export default proctoringLibrary;
+
+
+
+
+
