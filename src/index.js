@@ -11,15 +11,16 @@
 
 class ProctoringLibrary {
   constructor() {
+    //setting up arrays to store logs for all activities
     this.eventLogs = [];
     this.suspiciousActivities = [];
     this.screenshotInterval = null;
     this.altKeyActive = false;
     this.timerInterval = null;
-    this.elapsedTime = 0; // Elapsed time in minutes
-    this.totalExamDuration = null; // To
+    this.elapsedTime = 0;
+    this.totalExamDuration = null;
 
-    // Initialize the lockdown, logging, fullscreen enforcement, etc.
+    //innitialising the various functions to be used in the library
     this.initLockdown();
     this.initLogging();
     this.enforceFullscreen();
@@ -27,23 +28,25 @@ class ProctoringLibrary {
     this.detectWindowSwitching();
     this.createNotificationModal();
     this.addFullscreenListener();
-
     this.setExamDuration(this.totalExamDuration);
   }
 
-  // Public method to allow the user to set exam duration from their application
+  // Public method to allow the user to set exam duration from their application, to ensure flexibility
   setExamDuration(duration) {
     if (duration && duration > 0) {
-      this.totalExamDuration = duration; // Total exam duration in minutes
-      this.startTimerNotification(); // Start the timer when duration is set
+      this.totalExamDuration = duration;
+      this.startTimerNotification();
     }
   }
 
-  // Method to create a custom notification modal
+  //creating all modals to be used as popups
+  // custom notification modal, the overall notification modal
   createNotificationModal() {
     if (document.getElementById("notification-modal")) return;
-
+    //creating a div for the modal, which will contain a header and a body
     const modal = document.createElement("div");
+
+    //this style goes forthe modal's container, the div
     modal.id = "notification-modal";
     modal.style.display = "none";
     modal.style.position = "fixed";
@@ -62,7 +65,7 @@ class ProctoringLibrary {
     modal.style.overflowY = "auto";
     modal.style.transition = "all 0.3s ease-in-out";
 
-    // Modal Header
+    // the header is a container in the main modal, created and styled
     const header = document.createElement("div");
     header.style.fontSize = "20px";
     header.style.fontWeight = "bold";
@@ -81,53 +84,39 @@ class ProctoringLibrary {
     document.body.appendChild(modal);
   }
 
-  // Method to show the notification modal with a dynamic message
+  // the body of the header contains a dynamic message with respect to the type of suspicious activity
   showNotification(message) {
     const modalMessage = document.getElementById("modal-message");
-    modalMessage.innerText = message; // Set the message
+    modalMessage.innerText = message;
 
-    // Show the modal with a fade-in effect
+    //At this level the modal is shown, with a visibility time of 2 seconds
     const modal = document.getElementById("notification-modal");
     modal.style.display = "block";
     modal.style.opacity = "0";
     setTimeout(() => {
-      modal.style.opacity = "1"; // Fade in
+      modal.style.opacity = "1";
     }, 10);
 
     setTimeout(() => {
-      modal.style.opacity = "0"; // Fade out
+      modal.style.opacity = "0";
       setTimeout(() => {
         modal.style.display = "none";
-      }, 300); // Match the fade-out duration with the transition
-    }, 5000); // Display for 5 seconds
+      }, 300);
+    }, 5000);
   }
 
-  // Timer alert that pops up as soon as fullscreen is activated
-  startTimerNotification() {
-    if (this.totalExamDuration) {
-      this.showNotification(
-        `The exam will be written in ${this.totalExamDuration} minutes.`
-      );
-    }
-
-   this.timerInterval = setInterval(() => {
-      const remainingTime = this.totalExamDuration - this.elapsedTime;
-      if (remainingTime <= 0) {
-        clearInterval(this.timerInterval);
-        this.showNotification("Time's up! Exam session has ended.");
-      } else {
-        this.showNotification(
-          `You have been writing for ${this.elapsedTime} minutes. ${remainingTime} minutes remaining.`
-        );
-        this.elapsedTime++;
-      }
-    }, 900000); // Update every minute
+  // Real-time notification for suspicious activities
+  notifySuspiciousActivity(activity) {
+    const timestamp = new Date().toISOString();
+    this.suspiciousActivities.push({ activity, timestamp });
+    this.showNotification(`${activity}`);
   }
 
+  //Logic for the event listener
   addFullscreenListener() {
     document.addEventListener("fullscreenchange", () => {
       if (document.fullscreenElement) {
-        this.startTimerNotification(); // Show timer when fullscreen is active
+        this.startTimerNotification();
       }
     });
 
@@ -146,61 +135,6 @@ class ProctoringLibrary {
     document.addEventListener("msfullscreenchange", () => {
       if (document.msFullscreenElement) {
         this.startTimerNotification();
-      }
-    });
-  }
-
-  // Real-time notification for suspicious activities
-  notifySuspiciousActivity(activity) {
-    const timestamp = new Date().toISOString();
-    this.suspiciousActivities.push({ activity, timestamp });
-
-    // Show the notification with the suspicious activity message
-    this.showNotification(`${activity}`);
-  }
-
-  // Method to detect window switching with Alt key press
-  detectWindowSwitching() {
-    const handleKeyDown = (event) => {
-      if (event.altKey) {
-        this.logEvent("Alt key pressed");
-        this.notifySuspiciousActivity(
-          "You cannot switch tabs during the exam. Please stay on this tab."
-        );
-        event.preventDefault();
-      }
-    };
-
-    // Listen for keydown event
-    window.addEventListener("keydown", handleKeyDown);
-  }
-
-  // Other methods remain unchanged (e.g., lockdown, fullscreen, screenshot capture, etc.)
-  initLockdown() {
-    document.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      this.logEvent("Right-click blocked");
-      this.notifySuspiciousActivity("Right-click is disabled during the exam."); // Notification for right-click
-    });
-
-    document.addEventListener("selectstart", (event) => {
-      event.preventDefault();
-      this.logEvent("Text selection blocked");
-      this.notifySuspiciousActivity(
-        "Text selection is disabled during the exam."
-      ); // Notification for text selection
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.ctrlKey || event.metaKey) {
-        const forbiddenKeys = ["c", "v", "x", "s", "a"];
-        if (forbiddenKeys.includes(event.key.toLowerCase())) {
-          event.preventDefault();
-          this.logEvent(`Blocked shortcut: ${event.key.toUpperCase()}`);
-          this.notifySuspiciousActivity(
-            `Shortcut ${event.key.toUpperCase()} is disabled during the exam.`
-          );
-        }
       }
     });
   }
@@ -238,6 +172,73 @@ class ProctoringLibrary {
     }
   }
 
+  //Logic for the timer
+  startTimerNotification() {
+    if (this.totalExamDuration) {
+      this.showNotification(
+        `The exam will be written in ${this.totalExamDuration} minutes.`
+      );
+    }
+
+    this.timerInterval = setInterval(() => {
+      const remainingTime = this.totalExamDuration - this.elapsedTime;
+      if (remainingTime <= 0) {
+        clearInterval(this.timerInterval);
+        this.showNotification("Time's up! Exam session has ended.");
+      } else {
+        this.showNotification(
+          `You have been writing for ${this.elapsedTime} minutes. ${remainingTime} minutes remaining.`
+        );
+        this.elapsedTime++;
+      }
+    }, 900000);
+  }
+
+  // Method to detect window switching with Alt key press
+  detectWindowSwitching() {
+    const handleKeyDown = (event) => {
+      if (event.altKey) {
+        this.logEvent("Alt key pressed");
+        this.notifySuspiciousActivity(
+          "You cannot switch tabs during the exam. Please stay on this tab."
+        );
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+  }
+
+  //for right click, text selection, keydown press
+  initLockdown() {
+    document.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      this.logEvent("Right-click blocked");
+      this.notifySuspiciousActivity("Right-click is disabled during the exam.");
+    });
+
+    document.addEventListener("selectstart", (event) => {
+      event.preventDefault();
+      this.logEvent("Text selection blocked");
+      this.notifySuspiciousActivity(
+        "Text selection is disabled during the exam."
+      );
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        const forbiddenKeys = ["c", "v", "x", "s", "a"];
+        if (forbiddenKeys.includes(event.key.toLowerCase())) {
+          event.preventDefault();
+          this.logEvent(`Blocked shortcut: ${event.key.toUpperCase()}`);
+          this.notifySuspiciousActivity(
+            `Shortcut ${event.key.toUpperCase()} is disabled during the exam.`
+          );
+        }
+      }
+    });
+  }
+
+  //alt tab and blur event
   initLogging() {
     window.addEventListener("blur", () => {
       this.logEvent("Tab switch or window blur detected");
@@ -252,16 +253,7 @@ class ProctoringLibrary {
     });
   }
 
-  logEvent(message) {
-    const timestamp = new Date().toISOString();
-    this.eventLogs.push({ message, timestamp });
-    console.log(`[LOG ${timestamp}] ${message}`);
-  }
-
-  getLogs() {
-    return this.eventLogs;
-  }
-
+  //snapshots
   startScreenshotCapture() {
     this.screenshotInterval = setInterval(() => {
       this.captureScreenshot();
@@ -347,6 +339,17 @@ class ProctoringLibrary {
         "Screen capture or webcam is not supported by this browser"
       );
     }
+  }
+
+  //event logs
+  logEvent(message) {
+    const timestamp = new Date().toISOString();
+    this.eventLogs.push({ message, timestamp });
+    console.log(`[LOG ${timestamp}] ${message}`);
+  }
+
+  getLogs() {
+    return this.eventLogs;
   }
 
   saveToSessionStorage(key, data) {
